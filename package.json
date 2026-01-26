@@ -1,0 +1,68 @@
+{
+  "name": "examx",
+  "displayName": "ExamX",
+  "description": "Monitors coding activity in VS Code during exams or assessments to ensure fair and authentic submissions.",
+  "version": "0.0.2",
+  "publisher": "Nikonerds",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheShenron/ExamX.git"
+  },
+  "icon": "examx.ico",
+  "engines": {
+    "vscode": "^1.108.1"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "exam.login",
+        "title": "Login to Exam"
+      },
+      {
+        "command": "exam.start",
+        "title": "Start Exam"
+      },
+      {
+        "command": "exam.submit",
+        "title": "Submit Exam"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.108.1",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.27.2",
+    "eslint": "^9.39.2",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.52.0"
+  },
+  "dependencies": {
+    "compressing": "^2.0.0"
+  }
+}
