@@ -1,8 +1,8 @@
-import * as vscode from "vscode";
-
-export type ExamState = "loggedOut" | "loggedIn" | "examStarted" | "examSubmitted" | "examExpired";
-
-let currentState: ExamState = "loggedOut";
+import { ExamState, getExamState, saveExamState } from "./extensionContext";
+import { startProctoring } from "./proctor";
+import { startSession } from "./session";
+import { resumeTimer } from "./timer";
+import * as vscode from 'vscode';
 
 // Subscribers (for reactive updates)
 const listeners: ((state: ExamState) => void)[] = [];
@@ -13,24 +13,38 @@ export function subscribe(listener: (state: ExamState) => void) {
 
 // Call whenever state changes
 function notify() {
+  const currentState = getExamState();
+  if (!currentState) {
+    return;
+  }
   listeners.forEach((listener) => listener(currentState));
 }
 
-// Initialize from VS Code globalState
-export function initState(context: vscode.ExtensionContext) {
-  const savedState = context.globalState.get<ExamState>("examState") || "loggedOut";
-  currentState = savedState;
+// Initialize from VS Code
+export function initState() {
+  restoreExamIfNeeded();
   notify();
+}
+
+export function restoreExamIfNeeded() {
+  const currentState = getExamState();
+  if (!currentState) {
+    return;
+  }
+
+  if (currentState !== "examStarted") {
+    return;
+  }
+
+  vscode.window.showInformationMessage('restoreExamIfNeeded() called!');
+
+  startProctoring();
+  startSession();
+  resumeTimer();
 }
 
 // Update state and persist
-export async function setState(context: vscode.ExtensionContext, newState: ExamState) {
-  currentState = newState;
-  await context.globalState.update("examState", newState);
+export async function setState(newState: ExamState) {
+  saveExamState(newState);
   notify();
-}
-
-// Get current state
-export function getState() {
-  return currentState;
 }

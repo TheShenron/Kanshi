@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
-import { ExamState, subscribe, getState } from "./state";
+import { subscribe } from "./state";
+import { ExamState, getContext, getExamState } from "./extensionContext";
 
 let loginButton: vscode.StatusBarItem;
 let submitButton: vscode.StatusBarItem;
 let instructionButton: vscode.StatusBarItem;
 
-export function initStatusBar(context: vscode.ExtensionContext) {
+export function initStatusBar() {
+  const context = getContext();
   loginButton = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Left,
     100,
@@ -19,10 +21,9 @@ export function initStatusBar(context: vscode.ExtensionContext) {
     vscode.StatusBarAlignment.Left,
     98,
   );
-
   instructionButton = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Left,
-    99, 
+    99,
   );
   instructionButton.text = "$(book) Exam Instructions";
   instructionButton.tooltip = "Click to view exam instructions";
@@ -39,7 +40,8 @@ export function initStatusBar(context: vscode.ExtensionContext) {
   subscribe(updateButtons);
 
   // Initial render
-  updateButtons(getState());
+  const state = getExamState();
+  updateButtons(state || "loggedOut");
 }
 
 function updateButtons(state: ExamState) {
@@ -47,10 +49,6 @@ function updateButtons(state: ExamState) {
   submitButton.hide();
 
   switch (state) {
-    // case "loggedOut":
-    //   loginButton.show();
-    //   submitButton.hide();
-    //   break;
     case "loggedIn":
     case "examStarted":
       loginButton.hide();
@@ -58,7 +56,6 @@ function updateButtons(state: ExamState) {
       break;
     case "loggedOut":
     case "examSubmitted":
-    case "examExpired":
       loginButton.show();
       submitButton.hide();
       break;

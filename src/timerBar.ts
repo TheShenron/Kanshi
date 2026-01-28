@@ -1,31 +1,27 @@
-
 import * as vscode from "vscode";
+import { getTimer } from "./extensionContext";
 
 let timerBar: vscode.StatusBarItem | null = null;
 let interval: NodeJS.Timeout | null = null;
-let remainingSeconds = 0;
 
-export function startTimerBar(totalSeconds: number) {
+export function startTimerBar() {
   stopTimerBar();
 
-  remainingSeconds = totalSeconds;
+  const { startTime, durationSeconds } = getTimer();
+
+  if (!startTime || !durationSeconds) {
+    return;
+  }
 
   timerBar = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Left,
-    1000, // high priority so it stays visible
+    1000
   );
 
   updateText();
   timerBar.show();
 
-  interval = setInterval(() => {
-    remainingSeconds--;
-    updateText();
-
-    if (remainingSeconds <= 0) {
-      stopTimerBar();
-    }
-  }, 1000);
+  interval = setInterval(updateText, 1000);
 }
 
 export function stopTimerBar() {
@@ -45,8 +41,22 @@ function updateText() {
     return;
   }
 
-  const min = Math.floor(remainingSeconds / 60);
-  const sec = remainingSeconds % 60;
+  const { startTime, durationSeconds } = getTimer();
+  if (!startTime || !durationSeconds) {
+    stopTimerBar();
+    return;
+  }
+
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const remaining = durationSeconds - elapsed;
+
+  if (remaining <= 0) {
+    stopTimerBar();
+    return;
+  }
+
+  const min = Math.floor(remaining / 60);
+  const sec = remaining % 60;
 
   timerBar.text = `$(clock) Exam: ${min}:${sec.toString().padStart(2, "0")}`;
   timerBar.tooltip = "Remaining exam time";

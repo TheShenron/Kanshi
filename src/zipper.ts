@@ -2,24 +2,29 @@ import * as vscode from "vscode";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { zip } from "compressing";
+import os from "node:os";
 
 export async function zipWorkspace(
   context: vscode.ExtensionContext,
-): Promise<string> {
+): Promise<string | null> {
   const root = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
   if (!root) {
     throw new Error("No workspace folder found");
   }
 
-  const zipPath = path.join(context.globalStorageUri.fsPath, "submission.zip");
+  const srcPath = path.join(root, "src");
+  if (!fs.existsSync(srcPath)) {
+    vscode.window.showErrorMessage(
+      'Source folder "src" not found in workspace root.',
+    );
+    return null;
+  }
+
+  const zipPath = path.join(os.tmpdir(), "submission.zip");
 
   fs.mkdirSync(path.dirname(zipPath), { recursive: true });
 
-  // Compress the entire src folder
-  await zip.compressDir(path.join(root, "src"), zipPath);
-
-  // If you need to include package.json as well, you would have to
-  // first copy it into a temp folder with src, then compress that folder.
+  await zip.compressDir(srcPath, zipPath);
 
   return zipPath;
 }

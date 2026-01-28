@@ -51,6 +51,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.108.1",
@@ -63,6 +64,8 @@
     "typescript-eslint": "^8.52.0"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
+    "axios": "^1.13.3",
     "compressing": "^2.0.0"
   }
 }

@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { session } from "./session";
 import { getGitLogs } from "./gitLogger";
 
-export async function upload(zipPath: string, token: string) {
+export async function upload(zipPath: string) {
 
   const gitLogs = await getGitLogs();
   session.events.push({ type: "gitLogs", timestamp: Date.now(), meta: { gitLogs } });
@@ -49,5 +49,4 @@ export async function upload(zipPath: string, token: string) {
   console.log("Saved zip and session events locally:");
   console.log("ZIP:", zipDest);
   console.log("Events JSON:", eventsDest);
-  console.log("Token", token);
 }

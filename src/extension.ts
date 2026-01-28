@@ -1,12 +1,14 @@
 import * as vscode from "vscode";
-import { initStatusBar } from "./statusBar";
 import { initState } from "./state";
 import { registerCommands } from "./commands";
+import { setContext } from "./extensionContext";
+import { initStatusBar } from "./statusBar";
 
 export function activate(context: vscode.ExtensionContext) {
-  initState(context);
-  initStatusBar(context);
-  registerCommands(context);
+  setContext(context);
+  initState();
+  initStatusBar();
+  registerCommands();
 }
 
 export function deactivate() {

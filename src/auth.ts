@@ -1,7 +1,9 @@
 import * as vscode from "vscode";
-// import fetch from 'node-fetch';
+import { api } from "./api/client";
+import { setToken } from "./extensionContext";
 
-export async function login(context: vscode.ExtensionContext) {
+export async function login() {
+
   const email = await vscode.window.showInputBox({ prompt: "Email" });
   if (!email) {
     throw new Error("Invalid Email!");
@@ -12,19 +14,9 @@ export async function login(context: vscode.ExtensionContext) {
     throw new Error("Invalid TestCode!");
   }
 
-  // const res = await fetch("https://yourserver.com/auth/login", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({ email, testCode }),
-  // });
+  const { data: loginData } = await api.post("/auth/login", { email, password: testCode });
 
-  // const data = (await res.json()) as { token: string };
-  // await context.globalState.update("authToken", data.token);
-  await context.globalState.update("authToken", "dummy_token");
+  await setToken(loginData.data.token);
 
-  // throw new Error("Invalid server response");
 }
 
-export function getToken(context: vscode.ExtensionContext): string | undefined {
-  return context.globalState.get("authToken");
-}

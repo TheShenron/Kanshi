@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
 import { recordEvent } from "./session";
 import crypto from "node:crypto";
+import { getContext } from "./extensionContext";
 
 let proctoringDisposable: vscode.Disposable | null = null;
 let codeHashes = new Set<string>();
 
-export function startProctoring(context: vscode.ExtensionContext) {
+export function startProctoring() {
+  const context = getContext();
   // 🔒 Prevent double start
   if (proctoringDisposable) {
     return;
