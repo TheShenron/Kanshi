@@ -2,7 +2,6 @@ import { ExamState, getExamState, saveExamState } from "./extensionContext";
 import { startProctoring } from "./proctor";
 import { startSession } from "./session";
 import { resumeTimer } from "./timer";
-import * as vscode from 'vscode';
 
 // Subscribers (for reactive updates)
 const listeners: ((state: ExamState) => void)[] = [];
@@ -35,8 +34,6 @@ export function restoreExamIfNeeded() {
   if (currentState !== "examStarted") {
     return;
   }
-
-  vscode.window.showInformationMessage('restoreExamIfNeeded() called!');
 
   startProctoring();
   startSession();

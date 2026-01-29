@@ -52,6 +52,7 @@
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
+    "@types/luxon": "^3.7.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.108.1",
@@ -66,6 +67,7 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "axios": "^1.13.3",
-    "compressing": "^2.0.0"
+    "compressing": "^2.0.0",
+    "luxon": "^3.7.2"
   }
 }

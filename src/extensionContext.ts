@@ -3,6 +3,36 @@ import * as vscode from "vscode";
 let extensionContext: vscode.ExtensionContext;
 
 const TOKEN_KEY = "authToken";
+const EXAM_ID_KEY = "examId";
+
+/* =====================
+   Exam ID
+===================== */
+
+export async function saveExamId(id: string) {
+    if (!extensionContext) {
+        return undefined;
+    }
+    await extensionContext.globalState.update(EXAM_ID_KEY, id);
+}
+
+export function getExamId(): string | undefined {
+    if (!extensionContext) {
+        return undefined;
+    }
+    return extensionContext.globalState.get<string>(EXAM_ID_KEY);
+}
+
+export async function clearExamId() {
+    if (!extensionContext) {
+        return;
+    }
+    await extensionContext.globalState.update(EXAM_ID_KEY, undefined);
+}
+
+/* =====================
+   Exam State
+===================== */
 
 const TIMER_START_KEY = 'timerStartTime';
 const TIMER_DURATION_KEY = 'timerDuration';

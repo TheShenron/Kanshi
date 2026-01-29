@@ -7,11 +7,20 @@ import { stopTimer } from "./timer";
 import { setState } from "./state";
 import { stopProctoring } from "./proctor";
 import * as fs from "node:fs";
-import { clearExamWorkspace, getContext, getExamWorkspace, resetToken, saveExamWorkspacePath, saveTimer } from "./extensionContext";
+import { clearExamId, clearExamWorkspace, getContext, getExamWorkspace, resetToken, saveExamId, saveExamWorkspacePath, saveTimer } from "./extensionContext";
 import { api } from "./api/client";
 import AdmZip from "adm-zip";
 import * as path from "node:path";
 import * as os from "node:os";
+
+interface ExamQuickPickItem extends vscode.QuickPickItem {
+  examData: {
+    name: string;
+    duration: string;
+    projectZip: string;
+    id: string;
+  };
+}
 
 export function registerCommands() {
   const context = getContext();
@@ -21,17 +30,32 @@ export function registerCommands() {
       try {
         await login();
 
-        const { data: examData } = await api.get('/exam');
+        const { data: examData } = await api.get('/users/my');
 
-        const exam = examData?.data?.exams?.[0];
-        if (!exam?.projectZip?.data || !exam?._id) {
-          throw new Error("Invalid exam data");
+        const exams = examData?.data?.userExams || [];
+        const examItems: ExamQuickPickItem[] = exams.map((item: any) => ({
+          label: item.examId.name,
+          detail: `Duration: ${item.examId.duration} minutes`,
+          examData: {
+            name: item.examId.name,
+            duration: String(item.examId.duration),
+            projectZip: item.examId.projectZip,
+            id: item._id,
+          },
+        }));
+
+        const selectedExam = await vscode.window.showQuickPick(examItems, {
+          placeHolder: 'Select an exam to continue',
+          canPickMany: false
+        });
+
+        if (!selectedExam) {
+          vscode.window.showWarningMessage('No exam selected');
+          return;
         }
 
-        const buf = Buffer.from(exam.projectZip.data);
+        const buf = Buffer.from(selectedExam.examData.projectZip, 'base64');
         const zip = new AdmZip(buf);
-
-        const examId = exam._id.toString();
 
         // Base folder owned by extension
         const baseFolder = path.join(os.tmpdir(), 'vscode-exam');
@@ -44,13 +68,14 @@ export function registerCommands() {
         // Create folders (Node fs ONLY)
         fs.mkdirSync(baseFolder, { recursive: true });
 
-        const tempFolder = path.join(baseFolder, `exam-${examId}`);
+        const tempFolder = path.join(baseFolder, `exam-${selectedExam.examData.name}`);
         fs.mkdirSync(tempFolder, { recursive: true });
 
         // Save exam state
         await saveExamWorkspacePath(tempFolder);
-        await saveTimer(Date.now(), 60 * 1);
+        await saveTimer(Date.now(), Number(selectedExam.examData.duration) * 60);
         await setState("examStarted");
+        await saveExamId(selectedExam.examData.id);
 
         // Extract exam files
         zip.extractAllTo(tempFolder, true);
@@ -111,18 +136,29 @@ export async function handleSubmit(mode: "manual" | "auto") {
     }
   } catch (err) {
     console.error("Error during submission:", err);
-    vscode.window.showErrorMessage("Submission failed due to an error.");
+    vscode.window.showErrorMessage("Submission failed due to an unexpected error.");
   } finally {
     if (zip) {
       try {
         fs.unlinkSync(zip);
         await cleanupExamWorkspace();
+        await clearExamId();
       } catch (err) {
         console.warn("Failed to delete zip file:", err);
       }
     }
   }
+
+  let message;
+  if (!zip) {
+    message = "Exam closed: submission failed because 'src' folder was not found.";
+  } else if (mode === "auto") {
+    message = "Exam auto-submitted!";
+  } else {
+    message = "Exam submitted successfully!";
+  }
   resetToken();
+
   await setState("loggedOut");
-  vscode.window.showInformationMessage(zip ? mode === "auto" ? "Exam auto-submitted!" : "Exam submitted successfully!" : "Exam closed: submission failed because 'src' folder was not found.",);
+  vscode.window.showInformationMessage(message);
 }
