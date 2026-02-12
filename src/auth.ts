@@ -14,7 +14,7 @@ export async function login() {
     throw new Error("Invalid TestCode!");
   }
 
-  const { data: loginData } = await api.post("/auth/login", { email, password: testCode });
+  const { data: loginData } = await api.post("/users/login", { email, password: testCode });
 
   await setToken(loginData.data.token);
 

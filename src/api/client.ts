@@ -6,6 +6,10 @@ import { setState } from '../state';
 
 export const api = axios.create({
     baseURL: 'http://localhost:5500/api',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+    },
     timeout: 15000,
 });
 

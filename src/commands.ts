@@ -7,18 +7,26 @@ import { stopTimer } from "./timer";
 import { setState } from "./state";
 import { stopProctoring } from "./proctor";
 import * as fs from "node:fs";
-import { clearExamId, clearExamWorkspace, getContext, getExamWorkspace, resetToken, saveExamId, saveExamWorkspacePath, saveTimer } from "./extensionContext";
+import { clearExamId, clearExamWorkspace, getContext, getExamWorkspace, resetToken, saveDriveId, saveExamId, saveExamWorkspacePath, saveTimer } from "./extensionContext";
 import { api } from "./api/client";
 import AdmZip from "adm-zip";
 import * as path from "node:path";
 import * as os from "node:os";
 
+interface HiringDriveQuickPickItem extends vscode.QuickPickItem {
+  examData: {
+    name: string;
+    code: string;
+    id: string;
+  };
+}
+
 interface ExamQuickPickItem extends vscode.QuickPickItem {
   examData: {
     name: string;
-    duration: string;
-    projectZip: string;
+    duration: number,
     id: string;
+    examZipFile: string
   };
 }
 
@@ -30,16 +38,43 @@ export function registerCommands() {
       try {
         await login();
 
-        const { data: examData } = await api.get('/users/my');
+        const { data: hiringDriveData } = await api.get(`/users/me/hiring-drives`);
+        console.log(hiringDriveData, "hiringDriveData")
 
-        const exams = examData?.data?.userExams || [];
-        const examItems: ExamQuickPickItem[] = exams.map((item: any) => ({
-          label: item.examId.name,
-          detail: `Duration: ${item.examId.duration} minutes`,
+        const hiringDrive = hiringDriveData?.data || [];
+        const hiringDriveItems: HiringDriveQuickPickItem[] = hiringDrive.map((item: any) => ({
+          label: item.name,
+          // detail: `Duration: ${item.duration} minutes`,
+          detail: `Code: ${item.code}`,
           examData: {
-            name: item.examId.name,
-            duration: String(item.examId.duration),
-            projectZip: item.examId.projectZip,
+            name: item.name,
+            // duration: String(item.duration),
+            code: String(item.code),
+            // projectZip: item?.fileZip || '',
+            id: item._id,
+          },
+        }));
+
+        const selectedHiringDriveItems = await vscode.window.showQuickPick(hiringDriveItems, {
+          placeHolder: 'Select an Hiring Drive to continue',
+          canPickMany: false
+        });
+
+        if (!selectedHiringDriveItems) {
+          vscode.window.showWarningMessage('No Hiring Drive selected');
+          return;
+        }
+
+        const { data: examsData } = await api.get(`/users/me/hiring-drives-exam/${selectedHiringDriveItems.examData.id}`);
+
+        const exams = examsData?.data || [];
+        const examItems: ExamQuickPickItem[] = exams.map((item: any) => ({
+          label: item.title,
+          detail: `Duration: ${item.duration} minutes (${item.difficulty})`,
+          examData: {
+            name: item.title,
+            duration: String(item.duration),
+            examZipFile: item?.examZipFile || '',
             id: item._id,
           },
         }));
@@ -54,7 +89,7 @@ export function registerCommands() {
           return;
         }
 
-        const buf = Buffer.from(selectedExam.examData.projectZip, 'base64');
+        const buf = Buffer.from(selectedExam.examData.examZipFile, 'base64');
         const zip = new AdmZip(buf);
 
         // Base folder owned by extension
@@ -71,11 +106,23 @@ export function registerCommands() {
         const tempFolder = path.join(baseFolder, `exam-${selectedExam.examData.name}`);
         fs.mkdirSync(tempFolder, { recursive: true });
 
+        //start exam:
+        const { data: startExam } = await api.post(`/results/me/start`, {
+          examId: selectedExam.examData.id,
+          hiringDriveId: selectedHiringDriveItems.examData.id
+        });
+
+        if (!startExam?.success) {
+          vscode.window.showWarningMessage(startExam?.message || "Failed to start Exam");
+          return;
+        }
+
         // Save exam state
         await saveExamWorkspacePath(tempFolder);
         await saveTimer(Date.now(), Number(selectedExam.examData.duration) * 60);
         await setState("examStarted");
         await saveExamId(selectedExam.examData.id);
+        await saveDriveId(selectedHiringDriveItems.examData.id)
 
         // Extract exam files
         zip.extractAllTo(tempFolder, true);

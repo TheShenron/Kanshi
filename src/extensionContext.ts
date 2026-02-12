@@ -4,6 +4,32 @@ let extensionContext: vscode.ExtensionContext;
 
 const TOKEN_KEY = "authToken";
 const EXAM_ID_KEY = "examId";
+const DRIVE_ID_KEY = "driveId";
+
+/* =====================
+   Drive ID
+===================== */
+
+export async function saveDriveId(id: string) {
+    if (!extensionContext) {
+        return undefined;
+    }
+    await extensionContext.globalState.update(DRIVE_ID_KEY, id);
+}
+
+export function getDriveId(): string | undefined {
+    if (!extensionContext) {
+        return undefined;
+    }
+    return extensionContext.globalState.get<string>(DRIVE_ID_KEY);
+}
+
+export async function clearDriveId() {
+    if (!extensionContext) {
+        return;
+    }
+    await extensionContext.globalState.update(DRIVE_ID_KEY, undefined);
+}
 
 /* =====================
    Exam ID
