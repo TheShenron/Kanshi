@@ -19,9 +19,9 @@ export async function upload(zipPath: string) {
     score: 54
   });
 
-
   //submit exam:
-  const { data: proctoring } = await api.post(`/results/${submitExam._id}/proctoring`, {
+  const resultId = submitExam?.data?._id || ''
+  await api.post(`/results/${resultId}/proctoring`, {
     events: session.events,
   });
 

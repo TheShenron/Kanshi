@@ -7,7 +7,7 @@ import { stopTimer } from "./timer";
 import { setState } from "./state";
 import { stopProctoring } from "./proctor";
 import * as fs from "node:fs";
-import { clearExamId, clearExamWorkspace, getContext, getExamWorkspace, resetToken, saveDriveId, saveExamId, saveExamWorkspacePath, saveTimer } from "./extensionContext";
+import { clearExamId, clearExamWorkspace, getContext, getExamWorkspace, getToken, resetToken, saveDriveId, saveExamId, saveExamWorkspacePath, saveTimer } from "./extensionContext";
 import { api } from "./api/client";
 import AdmZip from "adm-zip";
 import * as path from "node:path";
@@ -39,7 +39,6 @@ export function registerCommands() {
         await login();
 
         const { data: hiringDriveData } = await api.get(`/users/me/hiring-drives`);
-        console.log(hiringDriveData, "hiringDriveData")
 
         const hiringDrive = hiringDriveData?.data || [];
         const hiringDriveItems: HiringDriveQuickPickItem[] = hiringDrive.map((item: any) => ({
@@ -107,15 +106,10 @@ export function registerCommands() {
         fs.mkdirSync(tempFolder, { recursive: true });
 
         //start exam:
-        const { data: startExam } = await api.post(`/results/me/start`, {
+        await api.post(`/results/me/start`, {
           examId: selectedExam.examData.id,
           hiringDriveId: selectedHiringDriveItems.examData.id
         });
-
-        if (!startExam?.success) {
-          vscode.window.showWarningMessage(startExam?.message || "Failed to start Exam");
-          return;
-        }
 
         // Save exam state
         await saveExamWorkspacePath(tempFolder);
@@ -134,9 +128,9 @@ export function registerCommands() {
           false
         );
 
-      } catch (err) {
+      } catch (err: any) {
         console.log(err);
-        vscode.window.showErrorMessage("Login failed!");
+        vscode.window.showErrorMessage(err?.response?.data?.message || "Login failed!");
       }
     }),
 
