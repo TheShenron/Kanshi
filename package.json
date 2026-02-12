@@ -2,7 +2,7 @@
   "name": "examx",
   "displayName": "ExamX",
   "description": "Monitors coding activity in VS Code during exams or assessments to ensure fair and authentic submissions.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "Nikonerds",
   "license": "MIT",
   "repository": {

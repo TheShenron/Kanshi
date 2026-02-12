@@ -20,7 +20,7 @@ export async function upload(zipPath: string) {
   });
 
   //submit exam:
-  const resultId = submitExam?.data?._id || ''
+  const resultId = submitExam?.data?._id || '';
   await api.post(`/results/${resultId}/proctoring`, {
     events: session.events,
   });

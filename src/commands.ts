@@ -116,7 +116,7 @@ export function registerCommands() {
         await saveTimer(Date.now(), Number(selectedExam.examData.duration) * 60);
         await setState("examStarted");
         await saveExamId(selectedExam.examData.id);
-        await saveDriveId(selectedHiringDriveItems.examData.id)
+        await saveDriveId(selectedHiringDriveItems.examData.id);
 
         // Extract exam files
         zip.extractAllTo(tempFolder, true);
