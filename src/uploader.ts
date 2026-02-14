@@ -74,70 +74,58 @@ export function runTests(): Promise<TestResult> {
   });
 }
 
-export async function upload(zipPath: string) {
-  return vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: "Submitting exam...",
-      cancellable: false,
-    },
-    async (progress) => {
-      try {
-        progress.report({ message: "Running tests..." });
+export async function upload(
+  zipPath: string,
+  progress?: vscode.Progress<{ message?: string }>
+) {
+  try {
+    progress?.report({ message: "Running tests..." });
 
-        // 1) Run tests first and get result JSON
-        const testResult = await runTests();
+    // 1) Run tests first and get result JSON
+    const testResult = await runTests();
 
-        const isPassed = testResult.failed === 0;
+    const isPassed = testResult.failed === 0;
 
-        const score =
-          testResult.total > 0
-            ? Math.round((testResult.passed / testResult.total) * 100)
-            : 0;
+    const score =
+      testResult.total > 0
+        ? Math.round((testResult.passed / testResult.total) * 100)
+        : 0;
 
+    progress?.report({ message: "Collecting git logs..." });
 
-        progress.report({ message: "Collecting git logs..." });
+    // 2) Collect git logs
+    const gitLogs = await getGitLogs();
+    session.events.push({
+      type: "gitLogs",
+      timestamp: Date.now(),
+      meta: { gitLogs },
+    });
 
-        // 2) Collect git logs
-        const gitLogs = await getGitLogs();
-        session.events.push({
-          type: "gitLogs",
-          timestamp: Date.now(),
-          meta: { gitLogs },
-        });
+    progress?.report({ message: "Submitting results..." });
 
-        progress.report({ message: "Submitting exam..." });
+    const examId = getExamId();
+    const driveId = getDriveId();
 
-        const examId = getExamId();
-        const driveId = getDriveId();
+    // 3) Submit exam only AFTER tests complete
+    const { data: submitExam } = await api.post(`/results/me/submit`, {
+      examId,
+      hiringDriveId: driveId,
+      isPassed,
+      score,
+    });
 
-        // 3) Submit exam only AFTER tests complete
-        const { data: submitExam } = await api.post(`/results/me/submit`, {
-          examId,
-          hiringDriveId: driveId,
-          isPassed,
-          score,
-        });
+    const resultId = submitExam?.data?._id || "";
 
-        const resultId = submitExam?.data?._id || "";
+    progress?.report({ message: "Uploading proctoring events..." });
 
-        progress.report({ message: "Uploading proctoring events..." });
+    // 4) Upload proctoring
+    await api.post(`/results/${resultId}/proctoring`, {
+      events: session.events,
+    });
 
-        // 4) Upload proctoring
-        await api.post(`/results/${resultId}/proctoring`, {
-          events: session.events,
-        });
-
-        vscode.window.showInformationMessage("Exam submitted successfully!");
-      } catch (err: any) {
-        console.error(err);
-
-        vscode.window.showErrorMessage(
-          `❌ Submission failed: ${err?.message || "Unknown error"}`
-        );
-
-        throw err;
-      }
-    }
-  );
+    progress?.report({ message: "Finalizing submission..." });
+  } catch (err: any) {
+    console.error(err);
+    throw new Error(err?.response?.data?.message || err?.message || "Submission failed");
+  }
 }

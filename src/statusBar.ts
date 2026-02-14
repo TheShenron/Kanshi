@@ -25,8 +25,8 @@ export function initStatusBar() {
     vscode.StatusBarAlignment.Left,
     99,
   );
-  instructionButton.text = "$(book) Exam Instructions";
-  instructionButton.tooltip = "Click to view exam instructions";
+  instructionButton.text = "$(github) Join the Squad";
+  instructionButton.tooltip = "Connect with me on GitHub";
   instructionButton.command = "exam.instructions";
   context.subscriptions.push(instructionButton);
   instructionButton.show();
@@ -51,13 +51,22 @@ function updateButtons(state: ExamState) {
   switch (state) {
     case "loggedIn":
     case "examStarted":
-      loginButton.hide();
       submitButton.show();
+      submitButton.command = "exam.submit";
+      submitButton.text = "$(check) Submit Exam";
+      submitButton.tooltip = "Click to submit the exam";
       break;
+
+    case "submitting":
+      submitButton.show();
+      submitButton.command = undefined; // disables click
+      submitButton.text = "$(sync~spin) Submitting...";
+      submitButton.tooltip = "Submitting exam... Please wait";
+      break;
+
     case "loggedOut":
     case "examSubmitted":
       loginButton.show();
-      submitButton.hide();
       break;
   }
 }

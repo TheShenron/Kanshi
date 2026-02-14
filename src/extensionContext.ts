@@ -63,7 +63,7 @@ export async function clearExamId() {
 const TIMER_START_KEY = 'timerStartTime';
 const TIMER_DURATION_KEY = 'timerDuration';
 
-export type ExamState = "loggedOut" | "loggedIn" | "examStarted" | "examSubmitted";
+export type ExamState = "loggedOut" | "loggedIn" | "examStarted" | "submitting" | "examSubmitted";
 
 const EXAM_STATE_KEY: ExamState = "loggedOut";
 
