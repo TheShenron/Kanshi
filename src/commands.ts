@@ -30,6 +30,51 @@ interface ExamQuickPickItem extends vscode.QuickPickItem {
   };
 }
 
+export function writeExamWorkspaceSettings(tempFolder: string) {
+  const vscodeDir = path.join(tempFolder, ".vscode");
+  fs.mkdirSync(vscodeDir, { recursive: true });
+
+  const settingsPath = path.join(vscodeDir, "settings.json");
+
+  const settings = {
+    // --- Copilot / AI ---
+    "github.copilot.enable": false,
+    "github.copilot.inlineSuggest.enable": false,
+    "editor.inlineSuggest.enabled": false,
+
+    // --- Reduce auto-help / auto-import ---
+    "editor.suggestSelection": "first",
+    "editor.quickSuggestions": false,
+    "editor.parameterHints.enabled": false,
+    "editor.suggestOnTriggerCharacters": false,
+
+    // --- Disable auto code actions (can generate code) ---
+    "editor.codeActionsOnSave": {},
+    "editor.formatOnSave": false,
+
+    // --- Disable extensions recommendations ---
+    "extensions.ignoreRecommendations": true,
+
+    // --- Stop auto installing extensions ---
+    "extensions.autoCheckUpdates": false,
+    "extensions.autoUpdate": false,
+
+    // --- Optional: disable terminal suggestions ---
+    "terminal.integrated.suggest.enabled": false,
+
+    // --- Optional: disable chat extensions if installed ---
+    "chat.commandCenter.enabled": false,
+
+    // --- Optional: reduce distractions ---
+    "breadcrumbs.enabled": false,
+    "workbench.tips.enabled": false
+  };
+
+
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
+}
+
+
 export function registerCommands() {
   const context = getContext();
 
@@ -134,6 +179,7 @@ export function registerCommands() {
 
             progress.report({ message: "Opening workspace..." });
 
+            writeExamWorkspaceSettings(tempFolder);
             await vscode.commands.executeCommand(
               "vscode.openFolder",
               vscode.Uri.file(tempFolder),
