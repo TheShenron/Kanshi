@@ -175,7 +175,7 @@ export function registerCommands() {
             const tempFolder = path.join(baseFolder, `exam-${selectedExam.examData.name}`);
             fs.mkdirSync(tempFolder, { recursive: true });
 
-            progress.report({ message: "SLaunching your exam" });
+            progress.report({ message: "Launching your exam" });
 
             await api.post(`/results/me/start`, {
               examId: selectedExam.examData.id,
